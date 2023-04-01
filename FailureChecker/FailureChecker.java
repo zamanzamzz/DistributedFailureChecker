@@ -4,11 +4,11 @@ import java.net.UnknownHostException;
 import modules.HBeatReceiver;
 import modules.HBeatSender;
 
-public class FCheck {
+public class FailureChecker {
     private HBeatSender hBeatSender;
     private HBeatReceiver hBeatReceiver;
 
-    public FCheck(String serverToMonitorAddress, Integer serverToMonitorPort, Integer hBeatReceiverPort)
+    public FailureChecker(String serverToMonitorAddress, Integer serverToMonitorPort, Integer hBeatReceiverPort)
             throws SocketException, UnknownHostException {
         if (hBeatReceiverPort != null) {
             hBeatReceiver = new HBeatReceiver(hBeatReceiverPort);
