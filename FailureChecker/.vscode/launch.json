@@ -1,0 +1,24 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "FCheckTest Instance 1",
+            "request": "launch",
+            "mainClass": "FCheckTest",
+            "projectName": "FCheck_c92b192d",
+            "args": "localhost 4545 4546"
+        },
+        {
+            "type": "java",
+            "name": "FCheckTest Instance 2",
+            "request": "launch",
+            "mainClass": "FCheckTest",
+            "projectName": "FCheck_c92b192d",
+            "args": "localhost 4546 4545"
+        }
+    ]
+}
