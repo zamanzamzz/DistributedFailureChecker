@@ -1,4 +1,4 @@
-package RAFT;
+package RAFT.JavaRMIExample;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;

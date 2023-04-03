@@ -1,4 +1,4 @@
-package RAFT;
+package RAFT.JavaRMIExample;
 
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
