@@ -10,6 +10,7 @@ public class Client {
     public static void main(String[] args) {
 
         String host = (args.length < 1) ? null : args[0];
+        System.out.println("Host: " + host);
         try {
             Registry registry = LocateRegistry.getRegistry(host);
             Hello stub = (Hello) registry.lookup("Hello");
