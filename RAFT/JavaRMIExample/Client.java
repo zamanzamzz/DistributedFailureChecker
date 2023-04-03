@@ -13,8 +13,12 @@ public class Client {
         System.out.println("Host: " + host);
         try {
             Registry registry = LocateRegistry.getRegistry(host);
-            Hello stub = (Hello) registry.lookup("Hello");
-            String response = stub.sayHello();
+            Hello server1Stub = (Hello) registry.lookup("server1");
+            String response = server1Stub.sayHello();
+            System.out.println("response: " + response);
+
+            Hello server2Stub = (Hello) registry.lookup("server2");
+            response = server2Stub.sayHello();
             System.out.println("response: " + response);
         } catch (Exception e) {
             System.err.println("Client exception: " + e.toString());
