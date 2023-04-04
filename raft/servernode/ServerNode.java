@@ -15,7 +15,8 @@ public class ServerNode implements RAFTServerNodeAPI {
     // Server Configuration
     private String nodeId;
     private String host;
-    private List<ServerNode> otherServerNodes;
+    private List<ServerConfig> otherServerNodeConfigs;
+    private List<RAFTServerNodeAPI> otherServerNodes;
 
     // Persistent State
     private Integer currentTerm = 0;
@@ -35,28 +36,52 @@ public class ServerNode implements RAFTServerNodeAPI {
         this.isStub = false;
         this.nodeId = config.nodeId;
         this.host = config.host;
-        this.otherServerNodes = new ArrayList<ServerNode>();
-        for (ServerConfig serverConfig: config.otherServerNodes) {
-            Registry registry = LocateRegistry.getRegistry(serverConfig.host);
-            ServerNode serverNodeStub = (ServerNode) registry.lookup(serverConfig.nodeId);
-            serverNodeStub.setAsStub(serverConfig);
-            otherServerNodes.add(serverNodeStub);
-        }
+        this.otherServerNodes = new ArrayList<RAFTServerNodeAPI>();
+        this.otherServerNodeConfigs = config.otherServerNodes;
     }
 
     public void initialize() throws Exception {
         try {
-            ServerNode server2Stub = (ServerNode) UnicastRemoteObject.exportObject(this, 0);
+            RAFTServerNodeAPI serverStub = (RAFTServerNodeAPI) UnicastRemoteObject.exportObject(this, 0);
 
             // Bind the remote object's stub in the registry
             Registry registry = LocateRegistry.getRegistry();
-            registry.bind(nodeId, server2Stub);
+            try {
+                registry.unbind(nodeId);
+            } catch (Exception e) {}
+            registry.bind(nodeId, serverStub);
 
             System.err.println("Server ready");
         } catch (Exception e) {
             System.err.println("Server exception: " + e.toString());
             e.printStackTrace();
             throw e;
+        }
+
+        for (ServerConfig serverConfig: otherServerNodeConfigs) {
+            int numOfAttempts = 1;
+            while (true) {
+                System.out.println("Connection to " + serverConfig.nodeId + " attempt " + numOfAttempts);
+                try {
+                    Registry registry = LocateRegistry.getRegistry(serverConfig.host);
+                    RAFTServerNodeAPI serverNodeStub = (RAFTServerNodeAPI) registry.lookup(serverConfig.nodeId);
+                    otherServerNodes.add(serverNodeStub);
+                    System.out.println("Connection to " + serverConfig.nodeId + " successful");
+                    break;
+                } catch (Exception e) {
+                    System.out.println("Unable to connect to " + serverConfig.nodeId + ": retrying in 1 second");
+                    numOfAttempts++;
+                    Thread.sleep(1000);
+                }
+            }
+        }
+        System.out.println("Successfully connected to all other server nodes, system ready for use");
+
+        for (RAFTServerNodeAPI remoteServer: otherServerNodes) {
+            AppendEntriesResult appendEntriesResult = remoteServer.appendEntries(currentTerm, host, currentTerm, null, commitIndex);
+            System.out.println(appendEntriesResult);
+            RequestVoteResult requestVoteResult = remoteServer.requestVote(currentTerm, host, currentTerm, commitIndex);
+            System.out.println(requestVoteResult);
         }
     }
 
@@ -82,16 +107,14 @@ public class ServerNode implements RAFTServerNodeAPI {
     @Override
     public AppendEntriesResult appendEntries(Integer term, String leaderId, Integer prevLogTerm, Integer[] entries,
             Integer leaderCommit) {
+        System.out.println("AppendEntries called");
         return new AppendEntriesResult(1, false);
     }
 
     @Override
     public RequestVoteResult requestVote(Integer term, String candidateId, Integer lastLogIndex, Integer lastLogTerm) {
+        System.out.println("RequestVote called");
         return new RequestVoteResult(1, false);
-    }
-
-    public static void main(String[] args) {
-        
     }
     
 }
