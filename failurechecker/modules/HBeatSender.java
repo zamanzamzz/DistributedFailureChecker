@@ -1,4 +1,4 @@
-package modules;
+package failurechecker.modules;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
@@ -9,7 +9,7 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 
-import models.HBeatMessage;
+import failurechecker.models.HBeatMessage;
 
 public class HBeatSender extends Thread {
     private HBeatReceiver hBeatReceiver;

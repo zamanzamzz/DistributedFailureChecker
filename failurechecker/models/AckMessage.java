@@ -1,4 +1,5 @@
-package models;
+package failurechecker.models;
+
 import java.util.Date;
 
 public class AckMessage implements java.io.Serializable {

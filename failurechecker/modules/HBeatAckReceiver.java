@@ -1,4 +1,5 @@
-package modules;
+package failurechecker.modules;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -7,7 +8,7 @@ import java.net.DatagramSocket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 
-import models.AckMessage;
+import failurechecker.models.AckMessage;
 
 public class HBeatAckReceiver extends Thread {
     private HBeatSender client;

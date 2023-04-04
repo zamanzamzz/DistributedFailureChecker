@@ -1,4 +1,4 @@
-package RAFT.ServerNode;
+package raft.servernode;
 
 public enum ServerState {
     follower,

@@ -1,4 +1,4 @@
-package modules;
+package failurechecker.modules;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -8,8 +8,8 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketException;
 
-import models.AckMessage;
-import models.HBeatMessage;
+import failurechecker.models.AckMessage;
+import failurechecker.models.HBeatMessage;
 
 public class HBeatReceiver extends Thread {
 

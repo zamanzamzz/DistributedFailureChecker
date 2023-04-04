@@ -1,4 +1,4 @@
-package RAFT.JavaRMIExample;
+package raft.javarmiexample;
         
 import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;

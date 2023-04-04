@@ -1,4 +1,4 @@
-package RAFT.JavaRMIExample;
+package raft.javarmiexample;
 
 public class Server2 implements Hello {
         

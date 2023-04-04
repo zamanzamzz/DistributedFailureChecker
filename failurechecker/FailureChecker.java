@@ -1,8 +1,10 @@
+package failurechecker;
+
 import java.net.SocketException;
 import java.net.UnknownHostException;
 
-import modules.HBeatReceiver;
-import modules.HBeatSender;
+import failurechecker.modules.HBeatReceiver;
+import failurechecker.modules.HBeatSender;
 
 public class FailureChecker {
     private HBeatSender hBeatSender;

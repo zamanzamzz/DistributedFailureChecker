@@ -1,3 +1,5 @@
+package failurechecker;
+
 import java.net.SocketException;
 import java.net.UnknownHostException;
 

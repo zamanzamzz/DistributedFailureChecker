@@ -1,4 +1,4 @@
-package RAFT.ServerNode;
+package raft.servernode;
 
 public class LogEntry {
     public final String command;

@@ -1,4 +1,4 @@
-package RAFT.ServerNode;
+package raft.servernode;
 
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
