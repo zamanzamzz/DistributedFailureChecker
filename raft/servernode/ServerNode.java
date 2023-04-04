@@ -4,6 +4,7 @@ import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -43,8 +44,20 @@ public class ServerNode implements RAFTServerNodeAPI {
         }
     }
 
-    public void initialize() {
-        
+    public void initialize() throws Exception {
+        try {
+            ServerNode server2Stub = (ServerNode) UnicastRemoteObject.exportObject(this, 0);
+
+            // Bind the remote object's stub in the registry
+            Registry registry = LocateRegistry.getRegistry();
+            registry.bind(nodeId, server2Stub);
+
+            System.err.println("Server ready");
+        } catch (Exception e) {
+            System.err.println("Server exception: " + e.toString());
+            e.printStackTrace();
+            throw e;
+        }
     }
 
     public String getNodeId() {
