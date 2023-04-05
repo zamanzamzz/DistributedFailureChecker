@@ -1,2 +1,2 @@
-rootProject.name = "DistributedFailureDetector"
+rootProject.name = "DistributedFailureChecker"
 
