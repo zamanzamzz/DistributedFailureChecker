@@ -1,0 +1,4 @@
+cd $(dirname "$0")
+
+cd build/classes/java/main/
+/usr/lib/jvm/java-11-openjdk/bin/rmiregistry
