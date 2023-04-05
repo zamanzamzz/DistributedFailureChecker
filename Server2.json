@@ -1,0 +1,10 @@
+{
+    "nodeId": "server2",
+    "host": "localhost",
+    "otherServerNodes": [
+        {
+            "nodeId": "server1",
+            "host": "localhost"
+        }
+    ]
+}

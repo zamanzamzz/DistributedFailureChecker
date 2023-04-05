@@ -4,11 +4,9 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,15 +40,21 @@ public class ServerConfig {
         this.log = log;
     }
 
-    // TODO fromJson constructor
-    public ServerConfig(String jsonFilePath) throws IOException, JSONException {
-        String content = new String(Files.readAllBytes((new File(jsonFilePath)).toPath()));
+    public ServerConfig(Path jsonFilePath) throws IOException, JSONException {
+        String content = new String(Files.readAllBytes(jsonFilePath));
         JSONObject jsonObject = new JSONObject(content);
         nodeId = jsonObject.getString("nodeId");
         host = jsonObject.getString("host");
-        currentTerm = jsonObject.getInt("currentTerm");
-        votedFor = jsonObject.getString("votedFor");
+        currentTerm = jsonObject.optInt("currentTerm");
+        votedFor = jsonObject.optString("votedFor");
+        otherServerNodes = new ArrayList<ServerConfig>();
         JSONArray otherConfigs = jsonObject.getJSONArray("otherServerNodes");
-        
+        for (Object otherConfig : otherConfigs) {
+            JSONObject otherConfigJson = (JSONObject) otherConfig;
+            ServerConfig serverConfig = new ServerConfig(otherConfigJson.getString("nodeId"),
+                    otherConfigJson.getString("host"), new ArrayList<>());
+            otherServerNodes.add(serverConfig);
+        }
+        log = new ArrayList<LogEntry>();
     }
 }
