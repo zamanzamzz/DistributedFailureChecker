@@ -10,6 +10,6 @@ public class ServerNodeBin {
         Path jsonPath = (new File(args[0])).toPath();
         ServerConfig config = new ServerConfig(jsonPath);
         ServerNode serverNode = new ServerNode(config);
-        serverNode.initialize(); 
+        serverNode.start(); 
     }
 }

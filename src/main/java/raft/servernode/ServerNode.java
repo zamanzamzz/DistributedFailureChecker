@@ -8,8 +8,9 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
-public class ServerNode implements RAFTServerNodeAPI {
+public class ServerNode extends Thread implements RAFTServerNodeAPI  {
     private Boolean isStub;
 
     // Server Configuration
@@ -32,15 +33,19 @@ public class ServerNode implements RAFTServerNodeAPI {
     private Map<String, Integer> nextIndex;
     private Map<String, Integer> matchIndex;
 
+    private Random random;
+
     public ServerNode(ServerConfig config) throws RemoteException, NotBoundException {
         this.isStub = false;
         this.nodeId = config.nodeId;
         this.host = config.host;
         this.otherServerNodes = new ArrayList<RAFTServerNodeAPI>();
         this.otherServerNodeConfigs = config.otherServerNodes;
+        random = new Random();
     }
 
-    public void initialize() throws Exception {
+    @Override
+    public synchronized void start() {
         try {
             RAFTServerNodeAPI serverStub = (RAFTServerNodeAPI) UnicastRemoteObject.exportObject(this, 0);
 
@@ -55,7 +60,7 @@ public class ServerNode implements RAFTServerNodeAPI {
         } catch (Exception e) {
             System.err.println("Server exception: " + e.toString());
             e.printStackTrace();
-            throw e;
+            return;
         }
 
         for (ServerConfig serverConfig: otherServerNodeConfigs) {
@@ -71,17 +76,62 @@ public class ServerNode implements RAFTServerNodeAPI {
                 } catch (Exception e) {
                     System.out.println("Unable to connect to " + serverConfig.nodeId + ": retrying in 1 second");
                     numOfAttempts++;
-                    Thread.sleep(1000);
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e1) {}
                 }
             }
         }
         System.out.println("Successfully connected to all other server nodes, system ready for use");
+        
+        super.start();
+    }
 
+    private int randomTimeout() {
+        return random.nextInt(1000) + 1001;
+    }
+
+    @Override
+    public void run() {
+        while (true) {
+            int randomTimeout = randomTimeout();
+            System.out.println("Sleeping for " + randomTimeout + " ms");
+            try {
+                Thread.sleep(randomTimeout);
+                System.out.println("Server now leader");
+                serverState = ServerState.leader;
+                sendHeartbeats();
+            } catch (Exception e) {
+                if (e instanceof InterruptedException) {
+                    System.out.println("Interrupted, resetting timeout");
+                }
+            }
+        }
+        
+    }
+
+    private void sendHeartbeats() {
         for (RAFTServerNodeAPI remoteServer: otherServerNodes) {
-            AppendEntriesResult appendEntriesResult = remoteServer.appendEntries(currentTerm, host, currentTerm, null, commitIndex);
-            System.out.println(appendEntriesResult);
-            RequestVoteResult requestVoteResult = remoteServer.requestVote(currentTerm, host, currentTerm, commitIndex);
-            System.out.println(requestVoteResult);
+            AppendEntriesResult appendEntriesResult;
+            try {
+                appendEntriesResult = remoteServer.appendEntries(currentTerm, host, currentTerm, null, commitIndex);
+                System.out.println(appendEntriesResult);
+            } catch (RemoteException e) {}
+            RequestVoteResult requestVoteResult;
+            try {
+                requestVoteResult = remoteServer.requestVote(currentTerm, host, currentTerm, commitIndex);
+                System.out.println(requestVoteResult);
+            } catch (RemoteException e) {}
+        }
+    }
+
+    private void requestVotes() {
+        for (RAFTServerNodeAPI remoteServer: otherServerNodes) {
+            RequestVoteResult requestVoteResult;
+            try {
+                requestVoteResult = remoteServer.requestVote(currentTerm, host, currentTerm, commitIndex);
+                System.out.println(requestVoteResult);
+            } catch (RemoteException e) {}
         }
     }
 
@@ -107,7 +157,8 @@ public class ServerNode implements RAFTServerNodeAPI {
     @Override
     public AppendEntriesResult appendEntries(Integer term, String leaderId, Integer prevLogTerm, Integer[] entries,
             Integer leaderCommit) {
-        System.out.println("AppendEntries called");
+        System.out.println("AppendEntries called, interrupting");
+        interrupt();
         return new AppendEntriesResult(1, false);
     }
 
