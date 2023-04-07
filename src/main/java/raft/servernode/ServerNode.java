@@ -10,13 +10,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-public class ServerNode extends Thread implements RAFTServerNodeAPI  {
-    private Boolean isStub;
+public class ServerNode extends Thread implements RAFTServerNodeAPI {
 
     // Server Configuration
-    private String nodeId;
-    private String host;
-    private List<ServerConfig> otherServerNodeConfigs;
+    public final String nodeId;
+    public final String host;
+    public final List<ServerConfig> otherServerNodeConfigs;
     private List<RAFTServerNodeAPI> otherServerNodes;
 
     // Persistent State
@@ -36,7 +35,6 @@ public class ServerNode extends Thread implements RAFTServerNodeAPI  {
     private Random random;
 
     public ServerNode(ServerConfig config) throws RemoteException, NotBoundException {
-        this.isStub = false;
         this.nodeId = config.nodeId;
         this.host = config.host;
         this.otherServerNodes = new ArrayList<RAFTServerNodeAPI>();
@@ -53,7 +51,8 @@ public class ServerNode extends Thread implements RAFTServerNodeAPI  {
             Registry registry = LocateRegistry.getRegistry();
             try {
                 registry.unbind(nodeId);
-            } catch (Exception e) {}
+            } catch (Exception e) {
+            }
             registry.bind(nodeId, serverStub);
 
             System.err.println("Server ready");
@@ -63,7 +62,7 @@ public class ServerNode extends Thread implements RAFTServerNodeAPI  {
             return;
         }
 
-        for (ServerConfig serverConfig: otherServerNodeConfigs) {
+        for (ServerConfig serverConfig : otherServerNodeConfigs) {
             int numOfAttempts = 1;
             while (true) {
                 System.out.println("Connection to " + serverConfig.nodeId + " attempt " + numOfAttempts);
@@ -78,17 +77,18 @@ public class ServerNode extends Thread implements RAFTServerNodeAPI  {
                     numOfAttempts++;
                     try {
                         Thread.sleep(1000);
-                    } catch (InterruptedException e1) {}
+                    } catch (InterruptedException e1) {
+                    }
                 }
             }
         }
         System.out.println("Successfully connected to all other server nodes, system ready for use");
-        
+
         super.start();
     }
 
     private int randomTimeout() {
-        return random.nextInt(1000) + 1001;
+        return random.nextInt(2000) + 2001;
     }
 
     @Override
@@ -98,61 +98,72 @@ public class ServerNode extends Thread implements RAFTServerNodeAPI  {
             System.out.println("Sleeping for " + randomTimeout + " ms");
             try {
                 Thread.sleep(randomTimeout);
-                System.out.println("Server now leader");
-                serverState = ServerState.leader;
-                sendHeartbeats();
+                runElection();
             } catch (Exception e) {
                 if (e instanceof InterruptedException) {
                     System.out.println("Interrupted, resetting timeout");
                 }
             }
         }
-        
+
     }
 
     private void sendHeartbeats() {
-        for (RAFTServerNodeAPI remoteServer: otherServerNodes) {
+        for (RAFTServerNodeAPI remoteServer : otherServerNodes) {
             AppendEntriesResult appendEntriesResult;
             try {
                 appendEntriesResult = remoteServer.appendEntries(currentTerm, host, currentTerm, null, commitIndex);
                 System.out.println(appendEntriesResult);
-            } catch (RemoteException e) {}
+            } catch (RemoteException e) {
+            }
             RequestVoteResult requestVoteResult;
             try {
                 requestVoteResult = remoteServer.requestVote(currentTerm, host, currentTerm, commitIndex);
                 System.out.println(requestVoteResult);
-            } catch (RemoteException e) {}
+            } catch (RemoteException e) {
+            }
         }
     }
 
-    private void requestVotes() {
-        for (RAFTServerNodeAPI remoteServer: otherServerNodes) {
-            RequestVoteResult requestVoteResult;
-            try {
-                requestVoteResult = remoteServer.requestVote(currentTerm, host, currentTerm, commitIndex);
-                System.out.println(requestVoteResult);
-            } catch (RemoteException e) {}
+    private void runElection() {
+        System.out.println("ServerNode running election as candidate");
+        synchronized (serverState) {
+            serverState = ServerState.candidate;
+        }
+
+        Integer currentTermToSend;
+        synchronized (currentTerm) {
+            currentTerm++;
+            currentTermToSend = currentTerm;
+        }
+
+        Integer lastLogIndex, lastLogTerm;
+        synchronized (log) {
+            lastLogIndex = log.size();
+            lastLogTerm = log.isEmpty() ? 0 : log.get(log.size() - 1).termReceived;
+        }
+
+        synchronized (votedFor) {
+            votedFor = nodeId;
+        }
+
+
+        for (RAFTServerNodeAPI remoteServer : otherServerNodes) {
+            // TODO use ExecutorService to request vote concurrently and collect vote results together
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    RequestVoteResult requestVoteResult;
+                    try {
+                        requestVoteResult = remoteServer.requestVote(currentTermToSend, nodeId, lastLogIndex,
+                                lastLogTerm);
+                        System.out.println(requestVoteResult);
+                    } catch (RemoteException e) {
+                    }
+                }
+            }).start();
         }
     }
-
-    public String getNodeId() {
-        return nodeId;
-    }
-
-    public String getHost() {
-        return host;
-    }
-
-    public Boolean getIsStub() {
-        return isStub;
-    }
-
-    public void setAsStub(ServerConfig serverConfig) {
-        isStub = true;
-        nodeId = serverConfig.nodeId;
-        host = serverConfig.host;
-    }
-
 
     @Override
     public AppendEntriesResult appendEntries(Integer term, String leaderId, Integer prevLogTerm, Integer[] entries,
@@ -165,7 +176,23 @@ public class ServerNode extends Thread implements RAFTServerNodeAPI  {
     @Override
     public RequestVoteResult requestVote(Integer term, String candidateId, Integer lastLogIndex, Integer lastLogTerm) {
         System.out.println("RequestVote called");
-        return new RequestVoteResult(1, false);
+
+        Boolean voteGranted = false;
+        Integer localLastLogTerm = (log.isEmpty() ? 0 : log.get(log.size() - 1).termReceived);
+        Integer localLastLogIndex = log.size();
+        Boolean candidateLastLogTermGreaterThanLocal = lastLogTerm > localLastLogTerm;
+        Boolean lastEntriesHaveSameTermButCandidateLogIsLonger = (lastLogTerm == localLastLogTerm
+                && lastLogIndex >= localLastLogIndex);
+        Boolean candidateLogIsAtleastAsUpToDateAsLocal = candidateLastLogTermGreaterThanLocal
+                || lastEntriesHaveSameTermButCandidateLogIsLonger;
+
+        if (currentTerm >= term && (votedFor == null || candidateLogIsAtleastAsUpToDateAsLocal)) {
+            voteGranted = true;
+            synchronized (votedFor) {
+                votedFor = candidateId;
+            }
+        }
+
+        return new RequestVoteResult(currentTerm, voteGranted);
     }
-    
 }
