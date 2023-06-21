@@ -11,8 +11,9 @@ repositories {
 
 dependencies {
     implementation("org.json:json:20230227")
-    testImplementation(platform("org.junit:junit-bom:5.9.1"))
-    testImplementation("org.junit.jupiter:junit-jupiter")
+    implementation("io.microraft:microraft:0.6")
+    implementation("org.slf4j:slf4j-log4j12:1.7.29")
+    implementation("org.assertj:assertj-core:3.23.1")
 }
 
 tasks.test {
