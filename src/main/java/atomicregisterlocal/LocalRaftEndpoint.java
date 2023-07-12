@@ -1,4 +1,4 @@
-package atomicregister;
+package atomicregisterlocal;
 
 import io.microraft.RaftEndpoint;
 

@@ -1,4 +1,4 @@
-package atomicregister;
+package atomicregisterlocal;
 
 import java.util.List;
 import java.util.Objects;
