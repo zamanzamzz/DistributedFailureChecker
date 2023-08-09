@@ -10,11 +10,19 @@
 			"version": "none",
 			"installMaven": "false",
 			"installGradle": "true"
+		},
+		"ghcr.io/devcontainers/features/desktop-lite": {
+			"password": "vscode",
+			"webPort": "6080",
+			"vncPort": "5901"
 		}
-	}
+	},
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
-	// "forwardPorts": [],
+	"forwardPorts": [
+		6080,
+		5901
+	]
 
 	// Use 'postCreateCommand' to run commands after the container is created.
 	// "postCreateCommand": "java -version",
